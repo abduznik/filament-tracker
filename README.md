@@ -1,5 +1,7 @@
 # Filament Tracker
 
+**[Live Demo](https://abduznik.github.io/filament-tracker/)**
+
 A modern, local-first dashboard to track your 3D printer filament inventory.
 
 ## Features
