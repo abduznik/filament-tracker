@@ -52,7 +52,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
               <Link
                 key={item.path}
                 to={item.path}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-medium ${
+                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all font-medium hover:opacity-80 ${
                   isActive 
                     ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400' 
                     : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-900 dark:hover:text-gray-200'
@@ -107,7 +107,7 @@ export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) =>
             <Link
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center gap-1 text-xs font-medium ${
+              className={`flex flex-col items-center gap-1 text-xs font-medium transition-opacity hover:opacity-80 ${
                 isActive ? 'text-blue-600 dark:text-blue-400' : 'text-gray-500 dark:text-gray-500'
               }`}
             >
