@@ -1,3 +1,4 @@
+
 @import "tailwindcss";
 
 @custom-variant dark (&:where(.dark, .dark *));
@@ -7,7 +8,9 @@
   --color-secondary: #64748b;
   --font-sans: Inter, system-ui, sans-serif;
 }
-
+:root {
+  --brand-primary: #2563eb;
+}
 body {
   @apply bg-gray-50 text-gray-900 transition-colors duration-200;
 }
