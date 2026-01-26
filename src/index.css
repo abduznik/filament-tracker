@@ -1,0 +1,18 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-primary: #3b82f6;
+  --color-secondary: #64748b;
+  --font-sans: Inter, system-ui, sans-serif;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900 transition-colors duration-200;
+}
+
+/* Dark mode overrides */
+.dark body {
+  @apply bg-gray-950 text-gray-100;
+}
