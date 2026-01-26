@@ -1,0 +1,68 @@
+name: Deploy & Release
+
+on:
+  push:
+    branches: [ master, main ]
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+  packages: write
+
+jobs:
+  # 1. Deploy to GitHub Pages (Always)
+  deploy-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:gh
+      - uses: actions/configure-pages@v4
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+      - uses: actions/deploy-pages@v4
+
+  # 2. Check Version & Release (Conditional)
+  release:
+    needs: deploy-pages
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check Version
+        id: check
+        uses: EndBug/version-check@v2
+        with:
+          diff-search: true
+
+      - name: Log in to GitHub Container Registry
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        if: steps.check.outputs.changed == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ steps.check.outputs.version }}
+
+      - name: Create Release
+        if: steps.check.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.check.outputs.version }}
+          name: Release v${{ steps.check.outputs.version }}
+          generate_release_notes: true

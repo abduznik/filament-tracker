@@ -1,0 +1,63 @@
+name: CI Check
+
+on:
+  pull_request:
+    branches: [ master, main ]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check:
+    name: Lint & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          
+      - run: npm ci
+      
+      - name: Lint Code
+        id: lint
+        run: npm run lint
+        continue-on-error: true
+        
+      - name: Check Build
+        id: build
+        run: npm run build
+        continue-on-error: true
+
+      - name: Comment on Failure
+        if: steps.lint.outcome == 'failure' || steps.build.outcome == 'failure'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const lintFail = "${{ steps.lint.outcome }}" === "failure";
+            const buildFail = "${{ steps.build.outcome }}" === "failure";
+            
+            let body = "**CI Check Failed** 🛑\n\n";
+            body += "I found some issues that need your attention:\n\n";
+            
+            if (lintFail) {
+              body += "- **Linting Errors**: The code style or rules are not quite right. Run `npm run lint` locally to see the specific lines.\n";
+            }
+            if (buildFail) {
+              body += "- **Build Errors**: The project failed to compile. This is usually due to a TypeScript error or a missing import.\n";
+            }
+            
+            body += "\nCheck the **Files changed** tab for red underlines, or click the **Details** link in the checks section below to see the full logs. Once you fix these and push, I will check it again!";
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            })
+            
+            // Fail the job officially
+            process.exit(1);

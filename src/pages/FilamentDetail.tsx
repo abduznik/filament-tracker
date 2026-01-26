@@ -12,6 +12,10 @@ export const FilamentDetail: React.FC = () => {
   const [amount, setAmount] = useState<number>(0);
   const [isUseMode, setIsUseMode] = useState(true); // true = use, false = restock
 
+  const loadLogs = (fId: number) => {
+    db.logs.where('filamentId').equals(fId).reverse().sortBy('date').then(setLogs);
+  };
+
   useEffect(() => {
     if (id) {
       const filamentId = Number(id);
@@ -21,10 +25,6 @@ export const FilamentDetail: React.FC = () => {
       loadLogs(filamentId);
     }
   }, [id]);
-
-  const loadLogs = (fId: number) => {
-    db.logs.where('filamentId').equals(fId).reverse().sortBy('date').then(setLogs);
-  };
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();

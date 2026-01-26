@@ -7,8 +7,22 @@ COPY . .
 RUN npm run build
 
 # Production stage
-FROM nginx:stable-alpine as production-stage
-COPY --from=build-stage /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+FROM node:20-alpine
+WORKDIR /app
+COPY package*.json ./
+# Install only production dependencies
+RUN npm install --omit=dev
+# Need better-sqlite3 specifically
+RUN npm install better-sqlite3
+
+COPY --from=build-stage /app/dist ./dist
+COPY server.js ./
+
+# Create data directory for volume
+RUN mkdir data
+
+# Set default port to 8082 to avoid conflicts (8080 is taken by qbittorrent)
+ENV PORT=8082
+EXPOSE 8082
+
+CMD ["node", "server.js"]

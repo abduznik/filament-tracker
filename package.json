@@ -6,11 +6,15 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
+    "build:gh": "tsc -b && vite build --base=/filament-tracker/",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "better-sqlite3": "^12.6.2",
+    "cors": "^2.8.6",
     "dexie": "^4.2.1",
+    "express": "^5.2.1",
     "lucide-react": "^0.563.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
@@ -20,6 +24,8 @@
   "devDependencies": {
     "@eslint/js": "^9.39.1",
     "@tailwindcss/postcss": "^4.1.18",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.5",
     "@types/react-dom": "^19.2.3",

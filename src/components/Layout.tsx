@@ -4,20 +4,18 @@ import { Home, PlusCircle, Spool, Sun, Moon } from 'lucide-react';
 
 export const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const location = useLocation();
-  const [isDark, setIsDark] = useState(true);
+  const [isDark, setIsDark] = useState(() => {
+    const savedTheme = localStorage.getItem('theme');
+    return savedTheme === 'light' ? false : true;
+  });
 
   useEffect(() => {
-    // Check local storage or default to true (Dark mode default)
-    const savedTheme = localStorage.getItem('theme');
-    const shouldUseDark = savedTheme === 'light' ? false : true;
-    setIsDark(shouldUseDark);
-    
-    if (shouldUseDark) {
+    if (isDark) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
-  }, []);
+  }, [isDark]);
 
   const toggleTheme = () => {
     const newTheme = !isDark;
