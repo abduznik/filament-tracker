@@ -4,6 +4,8 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 COPY . .
+ARG VITE_USE_SQLITE=true
+ENV VITE_USE_SQLITE=$VITE_USE_SQLITE
 RUN npm run build
 
 # Production stage

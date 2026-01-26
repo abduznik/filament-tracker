@@ -9,8 +9,8 @@ export const Dashboard: React.FC = () => {
   const [search, setSearch] = useState('');
 
   useEffect(() => {
-    // Simple fetch, in a real app use useLiveQuery from dexie-react-hooks
-    db.filaments.toArray().then(setFilaments);
+    // Unified API call
+    db.getFilaments().then(setFilaments);
   }, []);
 
   const filtered = filaments.filter(f => 
