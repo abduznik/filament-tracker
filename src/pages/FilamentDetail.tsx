@@ -13,13 +13,13 @@ export const FilamentDetail: React.FC = () => {
   const [isUseMode, setIsUseMode] = useState(true); // true = use, false = restock
 
   const loadLogs = (fId: number) => {
-    db.logs.where('filamentId').equals(fId).reverse().sortBy('date').then(setLogs);
+    db.getLogs(fId).then(setLogs);
   };
 
   useEffect(() => {
     if (id) {
       const filamentId = Number(id);
-      db.filaments.get(filamentId).then(f => {
+      db.getFilament(filamentId).then(f => {
         if (f) setFilament(f);
       });
       loadLogs(filamentId);
@@ -33,14 +33,12 @@ export const FilamentDetail: React.FC = () => {
     const change = isUseMode ? -amount : amount;
     const newWeight = filament.weight + change;
 
-    await db.transaction('rw', db.filaments, db.logs, async () => {
-      await db.filaments.update(filament.id!, { weight: newWeight });
-      await db.logs.add({
+    // Use unified API
+    await db.addLog({
         filamentId: filament.id!,
         changeAmount: change,
         date: new Date()
-      });
-    });
+    }, newWeight);
 
     setFilament({ ...filament, weight: newWeight });
     loadLogs(filament.id);
@@ -50,8 +48,7 @@ export const FilamentDetail: React.FC = () => {
   const handleDelete = async () => {
     if (window.confirm('Are you sure you want to delete this filament? This cannot be undone.')) {
         if (filament && filament.id) {
-            await db.filaments.delete(filament.id);
-            await db.logs.where('filamentId').equals(filament.id).delete();
+            await db.deleteFilament(filament.id);
             navigate('/');
         }
     }
