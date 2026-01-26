@@ -29,7 +29,7 @@ export const AddFilament: React.FC = () => {
     setLoading(true);
 
     try {
-      await db.filaments.add({
+      await db.addFilament({
         brand,
         color,
         material,

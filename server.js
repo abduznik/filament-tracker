@@ -61,6 +61,15 @@ app.post('/api/filaments', (req, res) => {
   res.json({ id: info.lastInsertRowid });
 });
 
+app.get('/api/filaments/:id', (req, res) => {
+  const row = db.prepare('SELECT * FROM filaments WHERE id = ?').get(req.params.id);
+  if (row) {
+    res.json(row);
+  } else {
+    res.status(404).json({ error: 'Filament not found' });
+  }
+});
+
 app.get('/api/logs/:filamentId', (req, res) => {
   const rows = db.prepare('SELECT * FROM logs WHERE filamentId = ? ORDER BY date DESC').all(req.params.filamentId);
   res.json(rows);
