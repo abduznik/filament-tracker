@@ -75,6 +75,7 @@ export const AddFilament: React.FC = () => {
               <input 
                 type="file" 
                 accept="image/*"
+                capture="environment"
                 onChange={handlePhotoChange}
                 className="absolute inset-0 opacity-0 cursor-pointer"
               />
