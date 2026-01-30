@@ -8,7 +8,7 @@ export interface Filament {
   cost: number; // Cost in USD
   purchaseDate: Date;
   photo?: Blob; // Stored as a Blob in IndexedDB
-  deleted?: boolean;
+  deleted?: number; // 0 for active, 1 for deleted
 }
 
 export interface UsageLog {
