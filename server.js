@@ -27,7 +27,8 @@ db.exec(`
     initialWeight REAL,
     cost REAL,
     purchaseDate TEXT,
-    photo BLOB
+    photo BLOB,
+    deleted INTEGER DEFAULT 0
   );
   CREATE TABLE IF NOT EXISTS logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -53,11 +54,11 @@ app.get('/api/filaments', (req, res) => {
 });
 
 app.post('/api/filaments', (req, res) => {
-  const { brand, color, material, weight, initialWeight, cost, purchaseDate, photo } = req.body;
+  const { brand, color, material, weight, initialWeight, cost, purchaseDate, photo, deleted } = req.body;
   const info = db.prepare(`
-    INSERT INTO filaments (brand, color, material, weight, initialWeight, cost, purchaseDate, photo)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `).run(brand, color, material, weight, initialWeight, cost, purchaseDate, photo);
+    INSERT INTO filaments (brand, color, material, weight, initialWeight, cost, purchaseDate, photo, deleted)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+  `).run(brand, color, material, weight, initialWeight, cost, purchaseDate, photo, deleted ? 1 : 0);
   res.json({ id: info.lastInsertRowid });
 });
 
@@ -89,8 +90,7 @@ app.post('/api/logs', (req, res) => {
 });
 
 app.delete('/api/filaments/:id', (req, res) => {
-  db.prepare('DELETE FROM logs WHERE filamentId = ?').run(req.params.id);
-  db.prepare('DELETE FROM filaments WHERE id = ?').run(req.params.id);
+  db.prepare('UPDATE filaments SET deleted = 1 WHERE id = ?').run(req.params.id);
   res.json({ success: true });
 });
 

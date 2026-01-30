@@ -6,11 +6,13 @@ import { Plus, Search } from 'lucide-react';
 
 export const Dashboard: React.FC = () => {
   const [filaments, setFilaments] = useState<Filament[]>([]);
+  const [totalSpend, setTotalSpend] = useState(0);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
     // Unified API call
     db.getFilaments().then(setFilaments);
+    db.getTotalSpend().then(setTotalSpend);
   }, []);
 
   const filtered = filaments.filter(f => 
@@ -18,8 +20,6 @@ export const Dashboard: React.FC = () => {
     f.color.toLowerCase().includes(search.toLowerCase()) ||
     f.material.toLowerCase().includes(search.toLowerCase())
   );
-
-  const totalSpend = filaments.reduce((sum, f) => sum + (f.cost || 0), 0);
 
   return (
     <div className="space-y-6">

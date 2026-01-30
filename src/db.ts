@@ -10,6 +10,7 @@ export interface DatabaseAPI {
   getLogs(filamentId: number): Promise<UsageLog[]>;
   addLog(log: Omit<UsageLog, 'id'>, newWeight: number): Promise<void>;
   updateFilamentWeight(id: number, newWeight: number): Promise<void>;
+  getTotalSpend(): Promise<number>;
 }
 
 // --- 1. Dexie Implementation (Browser / Static) ---
@@ -18,27 +19,26 @@ const dexieDb = new Dexie('FilamentTrackerDB') as Dexie & {
   logs: EntityTable<UsageLog, 'id'>;
 };
 
-dexieDb.version(1).stores({
-  filaments: '++id, brand, color, material',
+dexieDb.version(2).stores({
+  filaments: '++id, brand, color, material, deleted',
   logs: '++id, filamentId, date'
+}).upgrade(tx => {
+  return tx.table('filaments').toCollection().modify({ deleted: 0 });
 });
 
 const DexieAdapter: DatabaseAPI = {
   async getFilaments() {
-    return await dexieDb.filaments.toArray();
+    return await dexieDb.filaments.where('deleted').notEqual(1).toArray();
   },
   async getFilament(id) {
     return await dexieDb.filaments.get(id);
   },
   async addFilament(data) {
     // Dexie's add returns the key (ID) as a number for auto-increment tables
-    return (await dexieDb.filaments.add(data as Filament)) as number;
+    return (await dexieDb.filaments.add({ ...data, deleted: 0 } as Filament)) as number;
   },
   async deleteFilament(id) {
-    await dexieDb.transaction('rw', dexieDb.filaments, dexieDb.logs, async () => {
-      await dexieDb.filaments.delete(id);
-      await dexieDb.logs.where('filamentId').equals(id).delete();
-    });
+    await dexieDb.filaments.update(id, { deleted: 1 });
   },
   async getLogs(filamentId) {
     return await dexieDb.logs.where('filamentId').equals(filamentId).reverse().sortBy('date');
@@ -51,6 +51,10 @@ const DexieAdapter: DatabaseAPI = {
   },
   async updateFilamentWeight(id, newWeight) {
     await dexieDb.filaments.update(id, { weight: newWeight });
+  },
+  async getTotalSpend() {
+    const all = await dexieDb.filaments.toArray();
+    return all.reduce((sum, f) => sum + ((f.initialWeight / 1000) * (f.cost || 0)), 0);
   }
 };
 
@@ -70,7 +74,7 @@ const ApiAdapter: DatabaseAPI = {
   async getFilaments() {
     const res = await fetch(`${API_BASE}/filaments`);
     const data: ApiFilament[] = await res.json();
-    return data.map((f) => ({
+    return data.filter(f => !f.deleted).map((f) => ({
       ...f,
       purchaseDate: new Date(f.purchaseDate),
       photo: f.photo ? b64toBlob(f.photo) : undefined
@@ -93,7 +97,7 @@ const ApiAdapter: DatabaseAPI = {
       photoStr = await blobToB64(data.photo);
     }
 
-    const payload = { ...data, photo: photoStr };
+    const payload = { ...data, photo: photoStr, deleted: false };
     const res = await fetch(`${API_BASE}/filaments`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -126,6 +130,11 @@ const ApiAdapter: DatabaseAPI = {
   async updateFilamentWeight(_id: number, _newWeight: number) {
     // Not strictly needed if addLog handles it, but for completeness.
     console.warn("Direct weight update not supported in API yet");
+  },
+  async getTotalSpend() {
+    const res = await fetch(`${API_BASE}/filaments`);
+    const data: ApiFilament[] = await res.json();
+    return data.reduce((sum, f) => sum + ((f.initialWeight / 1000) * (f.cost || 0)), 0);
   }
 };
 
