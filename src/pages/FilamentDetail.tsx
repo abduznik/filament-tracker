@@ -26,7 +26,10 @@ export const FilamentDetail: React.FC = () => {
 
   useEffect(() => {
     if (id) {
-      loadData(Number(id));
+      const fetchData = async () => {
+        await loadData(Number(id));
+      };
+      fetchData();
     }
   }, [id]);
 
