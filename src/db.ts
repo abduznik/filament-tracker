@@ -23,22 +23,22 @@ dexieDb.version(2).stores({
   filaments: '++id, brand, color, material, deleted',
   logs: '++id, filamentId, date'
 }).upgrade(tx => {
-  return tx.table('filaments').toCollection().modify({ deleted: 0 });
+  return tx.table('filaments').toCollection().modify({ deleted: false });
 });
 
 const DexieAdapter: DatabaseAPI = {
   async getFilaments() {
-    return await dexieDb.filaments.where('deleted').notEqual(1).toArray();
+    return await dexieDb.filaments.where('deleted').notEqual(true).toArray();
   },
   async getFilament(id) {
     return await dexieDb.filaments.get(id);
   },
   async addFilament(data) {
     // Dexie's add returns the key (ID) as a number for auto-increment tables
-    return (await dexieDb.filaments.add({ ...data, deleted: 0 } as Filament)) as number;
+    return (await dexieDb.filaments.add({ ...data, deleted: false } as Filament)) as number;
   },
   async deleteFilament(id) {
-    await dexieDb.filaments.update(id, { deleted: 1 });
+    await dexieDb.filaments.update(id, { deleted: true });
   },
   async getLogs(filamentId) {
     return await dexieDb.logs.where('filamentId').equals(filamentId).reverse().sortBy('date');
