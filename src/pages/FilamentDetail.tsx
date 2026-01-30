@@ -9,20 +9,24 @@ export const FilamentDetail: React.FC = () => {
   const navigate = useNavigate();
   const [filament, setFilament] = useState<Filament | null>(null);
   const [logs, setLogs] = useState<UsageLog[]>([]);
+  const [totalSpent, setTotalSpent] = useState<number>(0);
   const [amount, setAmount] = useState<number>(0);
   const [isUseMode, setIsUseMode] = useState(true); // true = use, false = restock
 
-  const loadLogs = (fId: number) => {
-    db.getLogs(fId).then(setLogs);
+  const loadData = async (fId: number) => {
+    const [f, logs, spend] = await Promise.all([
+      db.getFilament(fId),
+      db.getLogs(fId),
+      db.getFilamentSpend(fId)
+    ]);
+    if (f) setFilament(f);
+    setLogs(logs);
+    setTotalSpent(spend);
   };
 
   useEffect(() => {
     if (id) {
-      const filamentId = Number(id);
-      db.getFilament(filamentId).then(f => {
-        if (f) setFilament(f);
-      });
-      loadLogs(filamentId);
+      loadData(Number(id));
     }
   }, [id]);
 
@@ -40,8 +44,7 @@ export const FilamentDetail: React.FC = () => {
         date: new Date()
     }, newWeight);
 
-    setFilament({ ...filament, weight: newWeight });
-    loadLogs(filament.id);
+    loadData(filament.id!);
     setAmount(0);
   };
 
@@ -85,8 +88,12 @@ export const FilamentDetail: React.FC = () => {
                     <span className="font-medium text-gray-900 dark:text-white">{filament.initialWeight}g</span>
                 </div>
                 <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center gap-2"><DollarSign size={18} /> Cost</div>
+                    <div className="flex items-center gap-2"><DollarSign size={18} /> Initial Cost</div>
                     <span className="font-medium text-gray-900 dark:text-white">${filament.cost}</span>
+                </div>
+                <div className="flex items-center justify-between text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-1 rounded-lg">
+                    <div className="flex items-center gap-2 font-bold text-sm"><DollarSign size={16} /> Total Spent</div>
+                    <span className="font-bold">${totalSpent.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-gray-600 dark:text-gray-400">
                     <div className="flex items-center gap-2"><Calendar size={18} /> Purchased</div>

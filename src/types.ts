@@ -9,6 +9,7 @@ export interface Filament {
   purchaseDate: Date;
   photo?: Blob; // Stored as a Blob in IndexedDB
   deleted?: number; // 0 for active, 1 for deleted
+  totalSpent?: number; // Calculated field
 }
 
 export interface UsageLog {
