@@ -19,12 +19,20 @@ export const Dashboard: React.FC = () => {
     f.material.toLowerCase().includes(search.toLowerCase())
   );
 
+  const totalSpend = filaments.reduce((sum, f) => sum + (f.cost || 0), 0);
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white">My Filaments</h2>
-          <p className="text-gray-500 dark:text-gray-400">Manage your collection and track usage</p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="text-gray-500 dark:text-gray-400">Manage your collection and track usage</p>
+            <span className="hidden sm:inline text-gray-300 dark:text-gray-700">•</span>
+            <div className="text-sm font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded-md">
+              Total Spend: {totalSpend.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}
+            </div>
+          </div>
         </div>
         <Link 
           to="/add" 
