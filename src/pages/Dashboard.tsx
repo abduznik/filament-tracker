@@ -11,7 +11,16 @@ export const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Unified API call
-    db.getFilaments().then(setFilaments);
+    Promise.all([db.getFilaments(), db.getAllLogs()]).then(([fils, logs]) => {
+      const enriched = fils.map(f => {
+        const fLogs = logs.filter(l => l.filamentId === f.id);
+        const restocks = fLogs.filter(l => l.changeAmount > 0).reduce((sum, l) => sum + l.changeAmount, 0);
+        const pricePerGram = (f.cost || 0) / (f.initialWeight || 1);
+        const totalSpent = (f.initialWeight + restocks) * pricePerGram;
+        return { ...f, totalSpent };
+      });
+      setFilaments(enriched);
+    });
     db.getTotalSpend().then(setTotalSpend);
   }, []);
 
@@ -91,9 +100,12 @@ export const Dashboard: React.FC = () => {
                 </div>
               </div>
               
-              <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-sm text-gray-400 dark:text-gray-500">
-                <span>${f.cost}</span>
-                <span>{(f.weight / f.initialWeight * 100).toFixed(0)}% Left</span>
+              <div className="mt-auto pt-4 border-t border-gray-50 dark:border-gray-800 flex justify-between items-center text-sm">
+                <div className="text-gray-500 dark:text-gray-400">
+                  <span className="font-semibold text-gray-700 dark:text-gray-300">${f.totalSpent?.toFixed(2)}</span>
+                  <span className="ml-1 text-xs">spent</span>
+                </div>
+                <span className="text-gray-400 dark:text-gray-500">{(f.weight / f.initialWeight * 100).toFixed(0)}% Left</span>
               </div>
             </div>
           </Link>

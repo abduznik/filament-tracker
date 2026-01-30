@@ -76,6 +76,11 @@ app.get('/api/logs/:filamentId', (req, res) => {
   res.json(rows);
 });
 
+app.get('/api/logs', (req, res) => {
+  const rows = db.prepare('SELECT * FROM logs').all();
+  res.json(rows);
+});
+
 app.post('/api/logs', (req, res) => {
   const { filamentId, changeAmount, date, note } = req.body;
   db.prepare(`

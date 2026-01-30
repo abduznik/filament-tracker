@@ -8,9 +8,11 @@ export interface DatabaseAPI {
   addFilament(data: Omit<Filament, 'id'>): Promise<number>;
   deleteFilament(id: number): Promise<void>;
   getLogs(filamentId: number): Promise<UsageLog[]>;
+  getAllLogs(): Promise<UsageLog[]>;
   addLog(log: Omit<UsageLog, 'id'>, newWeight: number): Promise<void>;
   updateFilamentWeight(id: number, newWeight: number): Promise<void>;
   getTotalSpend(): Promise<number>;
+  getFilamentSpend(filamentId: number): Promise<number>;
 }
 
 // --- 1. Dexie Implementation (Browser / Static) ---
@@ -43,6 +45,9 @@ const DexieAdapter: DatabaseAPI = {
   async getLogs(filamentId) {
     return await dexieDb.logs.where('filamentId').equals(filamentId).reverse().sortBy('date');
   },
+  async getAllLogs() {
+    return await dexieDb.logs.toArray();
+  },
   async addLog(log, newWeight) {
     await dexieDb.transaction('rw', dexieDb.filaments, dexieDb.logs, async () => {
       await dexieDb.filaments.update(log.filamentId, { weight: newWeight });
@@ -52,9 +57,25 @@ const DexieAdapter: DatabaseAPI = {
   async updateFilamentWeight(id, newWeight) {
     await dexieDb.filaments.update(id, { weight: newWeight });
   },
+  async getFilamentSpend(filamentId) {
+    const f = await dexieDb.filaments.get(filamentId);
+    if (!f) return 0;
+    const logs = await dexieDb.logs.where('filamentId').equals(filamentId).toArray();
+    const restocks = logs.filter(l => l.changeAmount > 0).reduce((sum, l) => sum + l.changeAmount, 0);
+    const pricePerGram = (f.cost || 0) / (f.initialWeight || 1);
+    return (f.initialWeight + restocks) * pricePerGram;
+  },
   async getTotalSpend() {
     const all = await dexieDb.filaments.toArray();
-    return all.reduce((sum, f) => sum + ((f.initialWeight / 1000) * (f.cost || 0)), 0);
+    let total = 0;
+    for (const f of all) {
+      if (f.deleted) continue;
+      const logs = await dexieDb.logs.where('filamentId').equals(f.id!).toArray();
+      const restocks = logs.filter(l => l.changeAmount > 0).reduce((sum, l) => sum + l.changeAmount, 0);
+      const pricePerGram = (f.cost || 0) / (f.initialWeight || 1);
+      total += (f.initialWeight + restocks) * pricePerGram;
+    }
+    return total;
   }
 };
 
@@ -117,6 +138,14 @@ const ApiAdapter: DatabaseAPI = {
       date: new Date(l.date)
     }));
   },
+  async getAllLogs() {
+    const res = await fetch(`${API_BASE}/logs`);
+    const data: ApiLog[] = await res.json();
+    return data.map((l) => ({
+      ...l,
+      date: new Date(l.date)
+    }));
+  },
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async addLog(log, _newWeight: number) {
     // Server handles weight update in the same transaction
@@ -131,10 +160,32 @@ const ApiAdapter: DatabaseAPI = {
     // Not strictly needed if addLog handles it, but for completeness.
     console.warn("Direct weight update not supported in API yet");
   },
+  async getFilamentSpend(filamentId) {
+    const fRes = await fetch(`${API_BASE}/filaments/${filamentId}`);
+    if (!fRes.ok) return 0;
+    const f: ApiFilament = await fRes.json();
+    
+    const lRes = await fetch(`${API_BASE}/logs/${filamentId}`);
+    const logs: ApiLog[] = await lRes.json();
+    
+    const restocks = logs.filter(l => l.changeAmount > 0).reduce((sum, l) => sum + l.changeAmount, 0);
+    const pricePerGram = (f.cost || 0) / (f.initialWeight || 1);
+    return (f.initialWeight + restocks) * pricePerGram;
+  },
   async getTotalSpend() {
-    const res = await fetch(`${API_BASE}/filaments`);
-    const data: ApiFilament[] = await res.json();
-    return data.reduce((sum, f) => sum + ((f.initialWeight / 1000) * (f.cost || 0)), 0);
+    const [fRes, lRes] = await Promise.all([
+      fetch(`${API_BASE}/filaments`),
+      fetch(`${API_BASE}/logs`)
+    ]);
+    const filaments: ApiFilament[] = await fRes.json();
+    const allLogs: ApiLog[] = await lRes.json();
+
+    return filaments.filter(f => !f.deleted).reduce((total, f) => {
+      const fLogs = allLogs.filter(l => l.filamentId === f.id);
+      const restocks = fLogs.filter(l => l.changeAmount > 0).reduce((sum, l) => sum + l.changeAmount, 0);
+      const pricePerGram = (f.cost || 0) / (f.initialWeight || 1);
+      return total + (f.initialWeight + restocks) * pricePerGram;
+    }, 0);
   }
 };
 
