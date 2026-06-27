@@ -3,6 +3,7 @@ import { Layout } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { AddFilament } from './pages/AddFilament';
 import { FilamentDetail } from './pages/FilamentDetail';
+import { NotFound } from './pages/NotFound';
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
           <Route path="/" element={<Dashboard />} />
           <Route path="/add" element={<AddFilament />} />
           <Route path="/filament/:id" element={<FilamentDetail />} />
+          <Route path="*" element={<NotFound />} />
         </Routes>
       </Layout>
     </BrowserRouter>
