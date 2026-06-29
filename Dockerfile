@@ -14,8 +14,8 @@ WORKDIR /app
 COPY package*.json ./
 # Install only production dependencies
 RUN npm install --omit=dev
-# Need better-sqlite3 specifically
-RUN npm install better-sqlite3
+# Copy pre-compiled better-sqlite3 from build stage (avoids native build tools in prod)
+COPY --from=build-stage /app/node_modules/better-sqlite3 ./node_modules/better-sqlite3
 
 COPY --from=build-stage /app/dist ./dist
 COPY server.js ./
